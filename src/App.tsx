@@ -6,24 +6,35 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import MapView from './pages/MapView';
+import EmergencyAlert from './components/EmergencyAlert';
+import ScrollToTop from './components/ScrollToTop';
+
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/incidents" element={<Incidents />} />
-      <Route path="/report" element={<ReportIncident />} />
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/map" element={<MapView />} />
-      <Route
-        path="/admin/dashboard"
-        element={
-          <ProtectedRoute>
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+    <>
+      <ScrollToTop />
+      <EmergencyAlert />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/incidents" element={<Incidents />} />
+        <Route path="/report" element={<ReportIncident />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/map" element={<MapView />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </>
   );
 }
 

@@ -194,7 +194,7 @@ const ReportIncident: React.FC = () => {
                             </div>
                         )}
 
-                        <form className="p-8 md:p-12 space-y-8" onSubmit={handleSubmit}>
+                        <form className="p-6 md:p-12 space-y-8" onSubmit={handleSubmit}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-6">
                                     <div className="space-y-1.5">
@@ -283,7 +283,7 @@ const ReportIncident: React.FC = () => {
                                     Location
                                 </label>
                                 <div className="space-y-3">
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-col md:flex-row gap-2">
                                         <div className="relative flex-grow">
                                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                                             <input
@@ -295,23 +295,26 @@ const ReportIncident: React.FC = () => {
                                                 required
                                             />
                                         </div>
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            className="shrink-0 px-4 h-[50px] bg-white border border-gray-200"
-                                            onClick={() => setShowMap(!showMap)}
-                                        >
-                                            {showMap ? 'Hide Map' : 'Pick on Map'}
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            className="shrink-0 px-4 h-[50px] bg-white border border-gray-200"
-                                            onClick={handleDetectLocation}
-                                            isLoading={isLocating}
-                                        >
-                                            {!isLocating && <Navigation className="w-5 h-5" />}
-                                        </Button>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                className="flex-1 md:flex-none md:w-32 h-[50px] bg-white border border-gray-200 justify-center"
+                                                onClick={() => setShowMap(!showMap)}
+                                            >
+                                                {showMap ? 'Hide Map' : 'Pick on Map'}
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                className="flex-1 md:flex-none px-4 h-[50px] bg-white border border-gray-200 justify-center"
+                                                onClick={handleDetectLocation}
+                                                isLoading={isLocating}
+                                            >
+                                                {!isLocating && <Navigation className="w-5 h-5" />}
+                                                {isLocating && <span className="ml-2 md:hidden">Locating...</span>}
+                                            </Button>
+                                        </div>
                                     </div>
 
                                     {showMap && (
@@ -352,7 +355,7 @@ const ReportIncident: React.FC = () => {
                             <div className="pt-4 flex justify-end">
                                 <Button
                                     size="lg"
-                                    className="px-12 py-4 h-auto shadow-lg shadow-primary/30 disabled:opacity-70"
+                                    className="w-full md:w-auto px-12 py-4 h-auto shadow-lg shadow-primary/30 disabled:opacity-70 justify-center"
                                     isLoading={isSubmitting}
                                 >
                                     <Send className="w-5 h-5 mr-2" />

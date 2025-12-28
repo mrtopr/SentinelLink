@@ -1,12 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { AlertCircle, Twitter, Facebook, Instagram, Mail, Phone } from 'lucide-react';
 
 const Footer: React.FC = () => {
     return (
         <footer className="bg-gray-50 border-t border-gray-100 pt-16 pb-8">
             <div className="container-custom">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12 mb-12">
                     {/* Logo and Description */}
                     <div className="col-span-1 md:col-span-1">
                         <Link to="/" className="flex items-center gap-2 mb-4">
@@ -22,10 +22,38 @@ const Footer: React.FC = () => {
                     <div>
                         <h4 className="font-bold text-gray-900 mb-6">Quick Links</h4>
                         <ul className="space-y-4">
-                            <li><Link to="/" className="text-sm text-gray-600 hover:text-primary transition-colors">Home</Link></li>
-                            <li><Link to="/report" className="text-sm text-gray-600 hover:text-primary transition-colors">Report Incident</Link></li>
-                            <li><Link to="/incidents" className="text-sm text-gray-600 hover:text-primary transition-colors">Live Incidents</Link></li>
-                            <li><Link to="/map" className="text-sm text-gray-600 hover:text-primary transition-colors">Map View</Link></li>
+                            <li>
+                                <NavLink
+                                    to="/"
+                                    className={({ isActive }) => `text-sm transition-colors ${isActive ? 'text-primary font-bold' : 'text-gray-600 hover:text-primary'}`}
+                                >
+                                    Home
+                                </NavLink>
+                            </li>
+                            <li>
+                                <NavLink
+                                    to="/report"
+                                    className={({ isActive }) => `text-sm transition-colors ${isActive ? 'text-primary font-bold' : 'text-gray-600 hover:text-primary'}`}
+                                >
+                                    Report Incident
+                                </NavLink>
+                            </li>
+                            <li>
+                                <NavLink
+                                    to="/incidents"
+                                    className={({ isActive }) => `text-sm transition-colors ${isActive ? 'text-primary font-bold' : 'text-gray-600 hover:text-primary'}`}
+                                >
+                                    Live Incidents
+                                </NavLink>
+                            </li>
+                            <li>
+                                <NavLink
+                                    to="/map"
+                                    className={({ isActive }) => `text-sm transition-colors ${isActive ? 'text-primary font-bold' : 'text-gray-600 hover:text-primary'}`}
+                                >
+                                    Map View
+                                </NavLink>
+                            </li>
                         </ul>
                     </div>
 
@@ -55,8 +83,8 @@ const Footer: React.FC = () => {
                     <div>
                         <h4 className="font-bold text-gray-900 mb-6">Legal</h4>
                         <ul className="space-y-4">
-                            <li><a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 hover:text-primary transition-colors">Privacy Policy</a></li>
-                            <li><a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 hover:text-primary transition-colors">Terms of Service</a></li>
+                            <li><Link to="/privacy" className="text-sm text-gray-600 hover:text-primary transition-colors">Privacy Policy</Link></li>
+                            <li><Link to="/terms" className="text-sm text-gray-600 hover:text-primary transition-colors">Terms of Service</Link></li>
                         </ul>
                     </div>
                 </div>

@@ -4,6 +4,7 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import Button from '../components/ui/Button';
 import { Shield, Zap, Globe, Users, ArrowRight } from 'lucide-react';
+import homeHeroImage from '../assets/home-hero.jpg';
 
 const Home: React.FC = () => {
     const [stats, setStats] = useState({ total: 0, pending: 0, active: 0, resolved: 0 });
@@ -27,9 +28,9 @@ const Home: React.FC = () => {
 
             <main className="flex-grow">
                 {/* Hero Section */}
-                <section className="container-custom py-24 md:py-32">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                        <div className="space-y-8 animate-in fade-in slide-in-from-left-8 duration-700">
+                <section className="container-custom py-12 md:py-32">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                        <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-left-8 duration-700 order-2 lg:order-1">
                             <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-widest">
                                 <Zap className="w-3 h-3" />
                                 Real-time Safety Network
@@ -64,20 +65,20 @@ const Home: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="relative group animate-in fade-in slide-in-from-right-8 duration-700">
+                        <div className="relative group animate-in fade-in slide-in-from-right-8 duration-700 order-1 lg:order-2">
                             <div className="absolute -inset-10 bg-primary/10 rounded-[4rem] blur-3xl group-hover:bg-primary/20 transition-all duration-700 -z-10" />
                             <div className="relative rounded-[2.5rem] overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] border-8 border-white">
                                 <img
-                                    src="https://images.unsplash.com/photo-1593113598332-cd288d649433?q=80&w=2000&auto=format&fit=crop"
+                                    src={homeHeroImage}
                                     alt="Emergency Response"
-                                    className="w-full h-auto aspect-[4/5] object-cover hover:scale-110 transition-transform duration-1000"
+                                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-1000"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent" />
                                 <div className="absolute bottom-8 left-8 right-8 p-6 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
                                     <p className="text-white text-sm font-medium leading-relaxed italic">
-                                        "SentinelLink helped our neighborhood coordinate during the floods. It's an essential tool for every city."
+                                        "Real-time reports helped responders act faster and smarter."
                                     </p>
-                                    <p className="text-white/60 text-xs mt-2 font-bold uppercase">— Local Resident</p>
+                                    <p className="text-white/60 text-xs mt-2 font-bold uppercase">— Community Member </p>
                                 </div>
                             </div>
                         </div>
@@ -85,9 +86,9 @@ const Home: React.FC = () => {
                 </section>
 
                 {/* Features Section */}
-                <section className="bg-gray-50 py-24 border-y border-gray-100">
+                <section className="bg-gray-50 py-16 md:py-24 border-y border-gray-100">
                     <div className="container-custom">
-                        <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
+                        <div className="text-center max-w-3xl mx-auto mb-12 md:mb-20 space-y-4">
                             <h2 className="text-4xl font-black text-gray-900 tracking-tight">Built for Trust and Speed</h2>
                             <p className="text-gray-500 font-medium">Our platform leverages modern technology to ensure every report is heard and every action is transparent.</p>
                         </div>
@@ -123,13 +124,13 @@ const Home: React.FC = () => {
                 </section>
 
                 {/* CTA Section */}
-                <section className="py-24 container-custom">
-                    <div className="bg-primary rounded-[3rem] p-12 md:p-20 text-center text-white relative overflow-hidden shadow-2xl shadow-primary/40">
+                <section className="py-16 md:py-24 container-custom">
+                    <div className="bg-primary rounded-[2rem] md:rounded-[3rem] p-8 md:p-20 text-center text-white relative overflow-hidden shadow-2xl shadow-primary/40">
                         <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
                         <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-black/10 rounded-full blur-3xl" />
 
-                        <div className="relative z-10 space-y-8 max-w-2xl mx-auto">
-                            <h2 className="text-4xl md:text-5xl font-black leading-tight">Ready to make your neighborhood safer?</h2>
+                        <div className="relative z-10 space-y-6 md:space-y-8 max-w-2xl mx-auto">
+                            <h2 className="text-3xl md:text-5xl font-black leading-tight">Ready to make your neighborhood safer?</h2>
                             <p className="text-primary-light text-lg font-medium opacity-90">
                                 Join thousands of citizens who are already using SentinelLink to report incidents and stay informed.
                             </p>

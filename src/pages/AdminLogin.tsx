@@ -23,7 +23,9 @@ const AdminLogin: React.FC = () => {
 
             if (loginData && loginData.token) {
                 localStorage.setItem('token', loginData.token);
-                navigate('/admin/dashboard');
+                localStorage.setItem('user', JSON.stringify(loginData.user));
+                // Force a hard navigation to ensure state is fresh
+                window.location.href = '/admin/dashboard';
             } else {
                 setError('Authentication failed. No token received.');
             }

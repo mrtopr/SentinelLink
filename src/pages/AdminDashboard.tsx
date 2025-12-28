@@ -10,7 +10,12 @@ import {
     LogOut,
     Settings,
     MessageSquare,
-    FileText
+    FileText,
+    Shield,
+    X,
+    Menu,
+    Search,
+    Download
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import Badge from '../components/ui/Badge';
@@ -45,10 +50,26 @@ const AdminDashboard: React.FC = () => {
     const [showAddUserModal, setShowAddUserModal] = useState(false);
     const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'CITIZEN' });
 
+    const stats = [
+        { label: 'Total Incidents', value: incidents.length, icon: AlertCircle, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { label: 'Pending Review', value: incidents.filter(i => i.status === 'REPORTED').length, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { label: 'Active Tasks', value: incidents.filter(i => i.status === 'IN_PROGRESS').length, icon: BarChart3, color: 'text-primary', bg: 'bg-primary/5' },
+        { label: 'Resolved Today', value: incidents.filter(i => i.status === 'RESOLVED').length, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' },
+    ];
+
+    const [showMobileSidebar, setShowMobileSidebar] = useState(false);
     useEffect(() => {
+        // Check authentication
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (!token || user.role !== 'ADMIN') {
+            navigate('/admin/login');
+        }
+
         fetchIncidents();
         fetchUsers();
-    }, []);
+    }, [navigate]);
 
     const fetchIncidents = async () => {
         setIsLoading(true);
@@ -251,17 +272,40 @@ const AdminDashboard: React.FC = () => {
         XLSX.writeFile(workbook, "incidents_report.xlsx");
     };
 
-    const stats = [
-        { label: 'Total Incidents', value: incidents.length, icon: AlertCircle, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'Pending Review', value: incidents.filter(i => i.status === 'REPORTED').length, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
-        { label: 'Active Tasks', value: incidents.filter(i => i.status === 'IN_PROGRESS').length, icon: BarChart3, color: 'text-primary', bg: 'bg-primary/5' },
-        { label: 'Resolved Today', value: incidents.filter(i => i.status === 'RESOLVED').length, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' },
-    ];
+
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex font-sans">
+            {/* Mobile Sidebar Overlay */}
+            {showMobileSidebar && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                    onClick={() => setShowMobileSidebar(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className="w-64 bg-white border-r border-gray-100 flex flex-col hidden lg:flex">
+            <aside
+                className={`
+                    fixed lg:static inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white flex flex-col transition-transform duration-300 ease-in-out
+                    ${showMobileSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                `}
+            >
+                <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-primary p-2 rounded-lg">
+                            <Shield className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="font-black text-lg tracking-tight">Sentinel<span className="text-primary">Link</span></h1>
+                            <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">Admin Panel</p>
+                        </div>
+                    </div>
+                    <button onClick={() => setShowMobileSidebar(false)} className="lg:hidden text-slate-400 hover:text-white">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+
                 <div className="p-8">
                     <div className="flex items-center gap-3 mb-10">
                         <div className="bg-primary p-2 rounded-xl">
@@ -316,9 +360,17 @@ const AdminDashboard: React.FC = () => {
             {/* Main Content */}
             <main className="flex-grow p-8 lg:p-12 overflow-y-auto h-screen">
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-                    <div>
-                        <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Admin Command</h1>
-                        <p className="text-gray-500 font-medium">Real-time emergency monitoring and coordination.</p>
+                    <div className="flex items-start gap-4">
+                        <button
+                            onClick={() => setShowMobileSidebar(true)}
+                            className="lg:hidden mt-1 p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <Menu className="w-8 h-8 text-gray-600" />
+                        </button>
+                        <div>
+                            <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Admin Command</h1>
+                            <p className="text-gray-500 font-medium">Real-time emergency monitoring and coordination.</p>
+                        </div>
                     </div>
                     <div className="flex items-center gap-4">
                         <Button variant="secondary" className="bg-white border-gray-200" onClick={handleExport}>Export Report</Button>
@@ -330,7 +382,7 @@ const AdminDashboard: React.FC = () => {
                 {activeTab === 'dashboard' && (
                     <>
                         {/* Stats Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                             {stats.map((stat, i) => (
                                 <div key={i} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                                     <div className="flex justify-between items-start mb-4">
@@ -605,150 +657,186 @@ const AdminDashboard: React.FC = () => {
                     </div>
                 )}
 
-                {activeTab === 'users' && (
-                    <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
-                        <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
-                            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Active User Directory</h2>
-                            <Button onClick={() => setShowAddUserModal(true)} size="sm">Add User</Button>
+                {
+                    activeTab === 'incidents' && (
+                        <div className="space-y-6 animate-in fade-in duration-500">
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                                <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                    <h3 className="text-lg font-bold text-gray-900">All Incidents</h3>
+                                    <div className="flex gap-2 w-full sm:w-auto">
+                                        <div className="relative flex-grow sm:flex-grow-0">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search..."
+                                                className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 w-full"
+                                            />
+                                        </div>
+                                        <Button size="sm" variant="secondary" onClick={handleExport}>
+                                            <Download className="w-4 h-4 mr-2" />
+                                            Export
+                                        </Button>
+                                    </div>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-sm">
+                                    </table>
+                                </div>
+                            </div>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="bg-gray-50/50">
-                                        <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">User</th>
-                                        <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Email</th>
-                                        <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Role</th>
-                                        <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Joined</th>
-                                        <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50">
-                                    {users.map((user) => (
-                                        <tr key={user.id}>
-                                            <td className="px-8 py-6 font-bold">{user.name}</td>
-                                            <td className="px-8 py-6 text-sm">{user.email}</td>
-                                            <td className="px-8 py-6">
-                                                <div className="flex items-center gap-2">
-                                                    <Badge label={user.role} type="status" value={user.role === 'ADMIN' ? 'RESOLVED' : 'VERIFIED'} />
-                                                    <select
-                                                        className="text-xs font-bold bg-gray-50 rounded-lg px-2 py-1 cursor-pointer border border-gray-200"
-                                                        value={user.role}
-                                                        onChange={(e) => handleRoleUpdate(user.id, e.target.value)}
-                                                    >
-                                                        <option value="CITIZEN">Citizen</option>
-                                                        <option value="ADMIN">Admin</option>
-                                                    </select>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6 text-xs text-gray-400">{new Date(user.createdAt).toLocaleDateString()}</td>
-                                            <td className="px-8 py-6">
-                                                <button
-                                                    onClick={() => handleDeleteUser(user.id)}
-                                                    className="text-red-500 hover:text-red-700 font-bold text-xs"
-                                                >
-                                                    Remove
-                                                </button>
-                                            </td>
+                    )
+                }
+
+                {
+                    activeTab === 'users' && (
+                        <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                            <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Active User Directory</h2>
+                                <Button onClick={() => setShowAddUserModal(true)} size="sm">Add User</Button>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-gray-50/50">
+                                            <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">User</th>
+                                            <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Email</th>
+                                            <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Role</th>
+                                            <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Joined</th>
+                                            <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Actions</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {users.map((user) => (
+                                            <tr key={user.id}>
+                                                <td className="px-8 py-6 font-bold">{user.name}</td>
+                                                <td className="px-8 py-6 text-sm">{user.email}</td>
+                                                <td className="px-8 py-6">
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge label={user.role} type="status" value={user.role === 'ADMIN' ? 'RESOLVED' : 'VERIFIED'} />
+                                                        <select
+                                                            className="text-xs font-bold bg-gray-50 rounded-lg px-2 py-1 cursor-pointer border border-gray-200"
+                                                            value={user.role}
+                                                            onChange={(e) => handleRoleUpdate(user.id, e.target.value)}
+                                                        >
+                                                            <option value="CITIZEN">Citizen</option>
+                                                            <option value="ADMIN">Admin</option>
+                                                        </select>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-6 text-xs text-gray-400">{new Date(user.createdAt).toLocaleDateString()}</td>
+                                                <td className="px-8 py-6">
+                                                    <button
+                                                        onClick={() => handleDeleteUser(user.id)}
+                                                        className="text-red-500 hover:text-red-700 font-bold text-xs"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
                 {/* Add User Modal */}
-                {showAddUserModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
-                        <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8 border border-gray-100">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-black text-gray-900">Add New User</h3>
-                                <button onClick={() => setShowAddUserModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                                    <LogOut className="w-5 h-5 rotate-180 text-gray-400" />
-                                </button>
-                            </div>
-
-                            <form onSubmit={handleAddUser} className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Full Name</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                        placeholder="John Doe"
-                                        value={newUser.name}
-                                        onChange={e => setNewUser({ ...newUser, name: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Email Address</label>
-                                    <input
-                                        type="email"
-                                        required
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                        placeholder="john@example.com"
-                                        value={newUser.email}
-                                        onChange={e => setNewUser({ ...newUser, email: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Password</label>
-                                    <input
-                                        type="password"
-                                        required
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                        placeholder="••••••••"
-                                        value={newUser.password}
-                                        onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Initial Role</label>
-                                    <select
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                        value={newUser.role}
-                                        onChange={e => setNewUser({ ...newUser, role: e.target.value })}
-                                    >
-                                        <option value="CITIZEN">Citizen</option>
-                                        <option value="ADMIN">Admin</option>
-                                    </select>
-                                </div>
-
-                                <div className="pt-4 flex gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowAddUserModal(false)}
-                                        className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors"
-                                    >
-                                        Cancel
+                {
+                    showAddUserModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+                            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8 border border-gray-100">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-xl font-black text-gray-900">Add New User</h3>
+                                    <button onClick={() => setShowAddUserModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                                        <LogOut className="w-5 h-5 rotate-180 text-gray-400" />
                                     </button>
-                                    <Button type="submit" className="flex-1" disabled={isLoading}>
-                                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Create User'}
-                                    </Button>
                                 </div>
-                            </form>
-                        </div>
-                    </div>
-                )}
 
-                {activeTab === 'settings' && (
-                    <div className="bg-white p-12 rounded-[3.5rem] border border-gray-100 shadow-sm max-w-2xl">
-                        <h2 className="text-3xl font-black text-gray-900 mb-8">System Settings</h2>
-                        <div className="space-y-8">
-                            <div className="p-6 bg-gray-50 rounded-2xl">
-                                <h4 className="font-bold text-gray-900 mb-2">Admin Profile</h4>
-                                <p className="text-gray-500 text-sm">Managing central coordination node.</p>
+                                <form onSubmit={handleAddUser} className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Full Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                            placeholder="John Doe"
+                                            value={newUser.name}
+                                            onChange={e => setNewUser({ ...newUser, name: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Email Address</label>
+                                        <input
+                                            type="email"
+                                            required
+                                            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                            placeholder="john@example.com"
+                                            value={newUser.email}
+                                            onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Password</label>
+                                        <input
+                                            type="password"
+                                            required
+                                            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                            placeholder="••••••••"
+                                            value={newUser.password}
+                                            onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Initial Role</label>
+                                        <select
+                                            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                            value={newUser.role}
+                                            onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                                        >
+                                            <option value="CITIZEN">Citizen</option>
+                                            <option value="ADMIN">Admin</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="pt-4 flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowAddUserModal(false)}
+                                            className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <Button type="submit" className="flex-1" disabled={isLoading}>
+                                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Create User'}
+                                        </Button>
+                                    </div>
+                                </form>
                             </div>
-                            <div className="p-6 bg-gray-50 rounded-2xl border-l-4 border-primary">
-                                <h4 className="font-bold text-gray-900 mb-2">Notifications</h4>
-                                <p className="text-gray-500 text-sm">Real-time alerts for high-severity incidents are enabled.</p>
-                            </div>
-                            <Button fullWidth onClick={() => alert('Settings saved successfully.')}>Save Configuration</Button>
                         </div>
-                    </div>
-                )}
-            </main>
-        </div>
+                    )
+                }
+
+                {
+                    activeTab === 'settings' && (
+                        <div className="bg-white p-12 rounded-[3.5rem] border border-gray-100 shadow-sm max-w-2xl">
+                            <h2 className="text-3xl font-black text-gray-900 mb-8">System Settings</h2>
+                            <div className="space-y-8">
+                                <div className="p-6 bg-gray-50 rounded-2xl">
+                                    <h4 className="font-bold text-gray-900 mb-2">Admin Profile</h4>
+                                    <p className="text-gray-500 text-sm">Managing central coordination node.</p>
+                                </div>
+                                <div className="p-6 bg-gray-50 rounded-2xl border-l-4 border-primary">
+                                    <h4 className="font-bold text-gray-900 mb-2">Notifications</h4>
+                                    <p className="text-gray-500 text-sm">Real-time alerts for high-severity incidents are enabled.</p>
+                                </div>
+                                <Button fullWidth onClick={() => alert('Settings saved successfully.')}>Save Configuration</Button>
+                            </div>
+                        </div>
+                    )
+                }
+            </main >
+        </div >
     );
 };
 

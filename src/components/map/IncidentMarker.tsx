@@ -8,9 +8,10 @@ import { INCIDENT_TYPE_ICONS, INCIDENT_TYPE_LABELS } from '../../constants/incid
 
 interface IncidentMarkerProps {
     incident: Incident;
+    isHighlighted?: boolean;
 }
 
-const IncidentMarker: React.FC<IncidentMarkerProps> = ({ incident }) => {
+const IncidentMarker: React.FC<IncidentMarkerProps> = ({ incident, isHighlighted = false }) => {
     // Determine color based on severity
     const getColor = (severity: string) => {
         switch (severity.toUpperCase()) {
@@ -35,13 +36,14 @@ const IncidentMarker: React.FC<IncidentMarkerProps> = ({ incident }) => {
     const createCustomIcon = () => {
         const colorClass = getColor(incident.severity);
         const statusClass = getStatusStyle(incident.status);
+        const highlightClass = isHighlighted ? 'ring-4 ring-offset-2 ring-blue-500 scale-125 z-[1000] animate-pulse' : '';
 
         const type = incident.incidentType || incident.type || 'OTHER';
         const IconComponent = INCIDENT_TYPE_ICONS[type] || HelpCircle;
 
         // Render Lucide icon to string
         const iconHtml = renderToString(
-            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shadow-lg transition-all transform hover:scale-110 ${colorClass} ${statusClass}`}>
+            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shadow-lg transition-all transform hover:scale-110 ${colorClass} ${statusClass} ${highlightClass}`}>
                 <IconComponent className="w-5 h-5" />
             </div>
         );
@@ -49,14 +51,18 @@ const IncidentMarker: React.FC<IncidentMarkerProps> = ({ incident }) => {
         return L.divIcon({
             html: iconHtml,
             className: 'bg-transparent', // Remove default leaflet background
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -32]
+            iconSize: isHighlighted ? [40, 40] : [32, 32],
+            iconAnchor: isHighlighted ? [20, 40] : [16, 32],
+            popupAnchor: [0, isHighlighted ? -40 : -32]
         });
     };
 
     return (
-        <Marker position={[incident.latitude, incident.longitude]} icon={createCustomIcon()}>
+        <Marker
+            position={[incident.latitude, incident.longitude]}
+            icon={createCustomIcon()}
+            zIndexOffset={isHighlighted ? 1000 : 0}
+        >
             <Popup className="incident-popup">
                 <div className="p-1 min-w-[200px]">
                     <div className="flex justify-between items-start mb-2">
