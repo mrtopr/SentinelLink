@@ -1,5 +1,6 @@
 import React from 'react';
-import { Filter, Flame, Ambulance, Activity, Car, Megaphone, CloudLightning } from 'lucide-react';
+import { Filter, Activity } from 'lucide-react';
+import { INCIDENT_TYPES, INCIDENT_TYPE_ICONS } from '../../constants/incidents';
 
 export interface MapFilterState {
     radius: number; // in km
@@ -82,24 +83,33 @@ const MapFilters: React.FC<MapFiltersProps> = ({ filters, onChange }) => {
             <div>
                 <label className="text-xs font-bold text-gray-500 block mb-3">Incident Type</label>
                 <div className="space-y-1">
-                    {['ALL', 'Fire', 'Medical', 'Accident', 'Public Disturbance', 'Natural Disaster'].map((type) => (
-                        <button
-                            key={type}
-                            onClick={() => handleTypeChange(type)}
-                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${filters.type === type
-                                ? 'bg-primary/5 text-primary font-bold'
-                                : 'text-gray-600 hover:bg-gray-50'
-                                }`}
-                        >
-                            {type === 'ALL' && <Activity className="w-4 h-4" />}
-                            {type === 'Fire' && <Flame className="w-4 h-4" />}
-                            {type === 'Medical' && <Ambulance className="w-4 h-4" />}
-                            {type === 'Accident' && <Car className="w-4 h-4" />}
-                            {type === 'Public Disturbance' && <Megaphone className="w-4 h-4" />}
-                            {type === 'Natural Disaster' && <CloudLightning className="w-4 h-4" />}
-                            {type === 'ALL' ? 'All Incidents' : type}
-                        </button>
-                    ))}
+                    <button
+                        key="ALL"
+                        onClick={() => handleTypeChange('ALL')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${filters.type === 'ALL'
+                            ? 'bg-primary/5 text-primary font-bold'
+                            : 'text-gray-600 hover:bg-gray-50'
+                            }`}
+                    >
+                        <Activity className="w-4 h-4" />
+                        All Incidents
+                    </button>
+                    {INCIDENT_TYPES.map((type) => {
+                        const Icon = INCIDENT_TYPE_ICONS[type.value];
+                        return (
+                            <button
+                                key={type.value}
+                                onClick={() => handleTypeChange(type.value)}
+                                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${filters.type === type.value
+                                    ? 'bg-primary/5 text-primary font-bold'
+                                    : 'text-gray-600 hover:bg-gray-50'
+                                    }`}
+                            >
+                                <Icon className="w-4 h-4" />
+                                {type.label}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         </div>

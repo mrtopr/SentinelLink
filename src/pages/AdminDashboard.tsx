@@ -12,6 +12,7 @@ import {
     MessageSquare,
     FileText
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { type Incident } from '../data/mockData';
@@ -39,6 +40,10 @@ const AdminDashboard: React.FC = () => {
     const [managedIncident, setManagedIncident] = useState<Incident | null>(null);
     const [newNote, setNewNote] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
+
+    // Add User Modal State
+    const [showAddUserModal, setShowAddUserModal] = useState(false);
+    const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'CITIZEN' });
 
     useEffect(() => {
         fetchIncidents();
@@ -88,6 +93,45 @@ const AdminDashboard: React.FC = () => {
         } catch (err) {
             console.error('Error deleting user:', err);
             alert('Failed to delete user.');
+        }
+    };
+
+    const handleRoleUpdate = async (id: string, newRole: string) => {
+        try {
+            await userApi.updateUserRole(id, newRole);
+            setUsers((prev: User[]) => prev.map((u: User) =>
+                u.id === id ? { ...u, role: newRole } : u
+            ));
+        } catch (err) {
+            console.error('Error updating role:', err);
+            alert('Failed to update role. Ensure you have permission.');
+        }
+    };
+
+    const handleAddUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        try {
+            const response = await userApi.createUser(newUser);
+            if (response.success && response.data) {
+                setUsers(prev => [response.data.user || response.data, ...prev]);
+                setShowAddUserModal(false);
+                setNewUser({ name: '', email: '', password: '', role: 'CITIZEN' });
+                alert('User created successfully!');
+            }
+        } catch (err: any) {
+            console.error('Error creating user:', err);
+            const message = err.response?.data?.message || 'Failed to create user';
+            const details = err.response?.data?.details;
+
+            if (details && Array.isArray(details)) {
+                const detailedMessage = details.map((d: any) => `${d.field}: ${d.message}`).join('\n');
+                alert(`${message}\n\n${detailedMessage}`);
+            } else {
+                alert(message);
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -197,17 +241,14 @@ const AdminDashboard: React.FC = () => {
 
     const handleLogout = () => {
         localStorage.removeItem('token');
-        navigate('/admin/login');
+        navigate('/');
     };
 
     const handleExport = () => {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(incidents));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "incidents_report.json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
+        const worksheet = XLSX.utils.json_to_sheet(incidents);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Incidents");
+        XLSX.writeFile(workbook, "incidents_report.xlsx");
     };
 
     const stats = [
@@ -566,8 +607,9 @@ const AdminDashboard: React.FC = () => {
 
                 {activeTab === 'users' && (
                     <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
-                        <div className="p-8 border-b border-gray-50">
+                        <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
                             <h2 className="text-2xl font-black text-gray-900 tracking-tight">Active User Directory</h2>
+                            <Button onClick={() => setShowAddUserModal(true)} size="sm">Add User</Button>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
@@ -585,7 +627,19 @@ const AdminDashboard: React.FC = () => {
                                         <tr key={user.id}>
                                             <td className="px-8 py-6 font-bold">{user.name}</td>
                                             <td className="px-8 py-6 text-sm">{user.email}</td>
-                                            <td className="px-8 py-6"><Badge label={user.role} type="status" value={user.role === 'ADMIN' ? 'RESOLVED' : 'VERIFIED'} /></td>
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center gap-2">
+                                                    <Badge label={user.role} type="status" value={user.role === 'ADMIN' ? 'RESOLVED' : 'VERIFIED'} />
+                                                    <select
+                                                        className="text-xs font-bold bg-gray-50 rounded-lg px-2 py-1 cursor-pointer border border-gray-200"
+                                                        value={user.role}
+                                                        onChange={(e) => handleRoleUpdate(user.id, e.target.value)}
+                                                    >
+                                                        <option value="CITIZEN">Citizen</option>
+                                                        <option value="ADMIN">Admin</option>
+                                                    </select>
+                                                </div>
+                                            </td>
                                             <td className="px-8 py-6 text-xs text-gray-400">{new Date(user.createdAt).toLocaleDateString()}</td>
                                             <td className="px-8 py-6">
                                                 <button
@@ -599,6 +653,80 @@ const AdminDashboard: React.FC = () => {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                )}
+
+                {/* Add User Modal */}
+                {showAddUserModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+                        <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8 border border-gray-100">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-black text-gray-900">Add New User</h3>
+                                <button onClick={() => setShowAddUserModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                                    <LogOut className="w-5 h-5 rotate-180 text-gray-400" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleAddUser} className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Full Name</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        placeholder="John Doe"
+                                        value={newUser.name}
+                                        onChange={e => setNewUser({ ...newUser, name: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Email Address</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        placeholder="john@example.com"
+                                        value={newUser.email}
+                                        onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Password</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        placeholder="••••••••"
+                                        value={newUser.password}
+                                        onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Initial Role</label>
+                                    <select
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        value={newUser.role}
+                                        onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                                    >
+                                        <option value="CITIZEN">Citizen</option>
+                                        <option value="ADMIN">Admin</option>
+                                    </select>
+                                </div>
+
+                                <div className="pt-4 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAddUserModal(false)}
+                                        className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <Button type="submit" className="flex-1" disabled={isLoading}>
+                                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Create User'}
+                                    </Button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 )}

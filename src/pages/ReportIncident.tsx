@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { INCIDENT_TYPES } from '../constants/incidents';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
@@ -112,19 +113,8 @@ const ReportIncident: React.FC = () => {
         try {
             const data = new FormData();
 
-            // Map UI types to backend enum values
-            const typeMapping: Record<string, string> = {
-                'Fire': 'FIRE',
-                'Flood': 'FLOOD',
-                'Traffic Accident': 'ACCIDENT',
-                'Medical Emergency': 'MEDICAL',
-                'Public Safety': 'CRIME',
-                'Infrastructure': 'INFRASTRUCTURE',
-                'Other': 'OTHER'
-            };
-
-            const incidentType = typeMapping[formData.type] || formData.type.toUpperCase();
-            data.append('incidentType', incidentType);
+            // Incident Type is already in the correct format from the dropdown values
+            data.append('incidentType', formData.type);
             data.append('severity', formData.severity.toUpperCase());
             data.append('description', formData.description);
             data.append('location', formData.location);
@@ -218,13 +208,11 @@ const ReportIncident: React.FC = () => {
                                             required
                                         >
                                             <option value="">Select an option...</option>
-                                            <option value="Fire">Fire</option>
-                                            <option value="Flood">Flood</option>
-                                            <option value="Traffic Accident">Traffic Accident</option>
-                                            <option value="Medical Emergency">Medical Emergency</option>
-                                            <option value="Public Safety">Public Safety</option>
-                                            <option value="Infrastructure">Infrastructure</option>
-                                            <option value="Other">Other</option>
+                                            {INCIDENT_TYPES.map((type) => (
+                                                <option key={type.value} value={type.value}>
+                                                    {type.label}
+                                                </option>
+                                            ))}
                                         </select>
                                     </div>
 

@@ -34,7 +34,17 @@ const Incidents: React.FC = () => {
     const [selectedType, setSelectedType] = useState<string>('All Types');
     const [selectedTimeRange, setSelectedTimeRange] = useState<string>('Anytime');
 
-    const [votedIncidents, setVotedIncidents] = useState<Set<string>>(new Set());
+    const [votedIncidents, setVotedIncidents] = useState<Set<string>>(() => {
+        const saved = localStorage.getItem('voted_incidents');
+        if (saved) {
+            try {
+                return new Set(JSON.parse(saved));
+            } catch (e) {
+                return new Set();
+            }
+        }
+        return new Set();
+    });
 
     useEffect(() => {
         fetchIncidents();
@@ -66,19 +76,27 @@ const Incidents: React.FC = () => {
 
             // Backend might return "You have already upvoted" or success
             if (response.success) {
-                setVotedIncidents(prev => new Set(prev).add(id));
+                setVotedIncidents(prev => {
+                    const newSet = new Set(prev).add(id);
+                    localStorage.setItem('voted_incidents', JSON.stringify(Array.from(newSet)));
+                    return newSet;
+                });
 
                 // Only increment count if it wasn't an "already voted" response effectively
                 // But strictly speaking, if backend says "already upvoted", count didn't change on server.
                 // However, for UI feedback, we mark it as voted.
 
                 if (!response.message.includes('already')) {
-                    // Update local count
+                    // Update local state with the FULL incident object from backend
+                    // This ensures status changes (REPORTED -> VERIFIED) are reflected immediately
+                    const updatedIncident = response.data;
+
                     setIncidents(prev => prev.map(inc =>
-                        inc.id === id ? { ...inc, upvoteCount: (inc.upvoteCount || 0) + 1 } : inc
+                        inc.id === id ? updatedIncident : inc
                     ));
+
                     if (selectedIncident?.id === id) {
-                        setSelectedIncident(prev => prev ? { ...prev, upvoteCount: (prev.upvoteCount || 0) + 1 } : null);
+                        setSelectedIncident(updatedIncident);
                     }
                 }
             }
@@ -331,10 +349,17 @@ const Incidents: React.FC = () => {
                                                         {votedIncidents.has(incident.id) ? (
                                                             <>
                                                                 <CheckCircle2 className="w-4 h-4" />
-                                                                Confirmed
+                                                                Confirmed ({incident.upvoteCount || 0})
                                                             </>
                                                         ) : (
-                                                            'Confirm / Upvote'
+                                                            <>
+                                                                <div className="flex items-center gap-1">
+                                                                    <span>Confirm / Upvote</span>
+                                                                    <span className="bg-blue-100/50 text-blue-600 px-1.5 py-0.5 rounded text-xs ml-1">
+                                                                        {incident.upvoteCount || 0}
+                                                                    </span>
+                                                                </div>
+                                                            </>
                                                         )}
                                                     </button>
                                                 </div>
@@ -459,10 +484,10 @@ const Incidents: React.FC = () => {
                                         {votedIncidents.has(selectedIncident.id) ? (
                                             <>
                                                 <CheckCircle2 className="w-4 h-4 mr-2" />
-                                                Confirmed
+                                                Confirmed ({selectedIncident.upvoteCount || 0})
                                             </>
                                         ) : (
-                                            'Confirm Incident'
+                                            `Confirm Incident (${selectedIncident.upvoteCount || 0})`
                                         )}
                                     </Button>
                                 </div>

@@ -2,8 +2,9 @@ import React from 'react';
 import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import type { Incident } from '../../data/mockData';
-import { AlertTriangle, Info, CheckCircle } from 'lucide-react';
+import { Info, CheckCircle, HelpCircle } from 'lucide-react';
 import { renderToString } from 'react-dom/server';
+import { INCIDENT_TYPE_ICONS, INCIDENT_TYPE_LABELS } from '../../constants/incidents';
 
 interface IncidentMarkerProps {
     incident: Incident;
@@ -35,10 +36,13 @@ const IncidentMarker: React.FC<IncidentMarkerProps> = ({ incident }) => {
         const colorClass = getColor(incident.severity);
         const statusClass = getStatusStyle(incident.status);
 
+        const type = incident.incidentType || incident.type || 'OTHER';
+        const IconComponent = INCIDENT_TYPE_ICONS[type] || HelpCircle;
+
         // Render Lucide icon to string
         const iconHtml = renderToString(
             <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shadow-lg transition-all transform hover:scale-110 ${colorClass} ${statusClass}`}>
-                <AlertTriangle className="w-5 h-5" />
+                <IconComponent className="w-5 h-5" />
             </div>
         );
 
@@ -67,7 +71,9 @@ const IncidentMarker: React.FC<IncidentMarkerProps> = ({ incident }) => {
                         </span>
                     </div>
 
-                    <h3 className="font-bold text-gray-900 mb-1">{incident.incidentType || incident.type}</h3>
+                    <h3 className="font-bold text-gray-900 mb-1">
+                        {INCIDENT_TYPE_LABELS[incident.incidentType || incident.type || 'OTHER'] || incident.incidentType || incident.type}
+                    </h3>
                     <p className="text-gray-600 text-sm mb-3 line-clamp-2">{incident.description}</p>
 
                     <div className="flex items-center gap-2 pt-2 border-t border-gray-100 mt-2">
@@ -84,6 +90,9 @@ const IncidentMarker: React.FC<IncidentMarkerProps> = ({ incident }) => {
                                 <Info className="w-3 h-3" /> Unverified
                             </div>
                         )}
+                        <div className="ml-auto text-[10px] text-gray-500 font-bold bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
+                            {incident.upvoteCount || 0} votes
+                        </div>
                     </div>
                 </div>
             </Popup>
