@@ -1,6 +1,6 @@
-# 🚨 SentinelLink - Emergency Response Coordination Platform
+# 🚨 SentinelLink (Anginat) - Emergency Response Coordination Platform
 
-**SentinelLink** is a real-time incident reporting and resource coordination platform designed to bridge the gap between citizens reporting emergencies and authorities responding to them.
+**SentinelLink** (codenamed *Anginat*) is a real-time incident reporting and resource coordination platform designed to bridge the gap between citizens reporting emergencies and authorities responding to them.
 
 Built for the **HACKATHON**, this platform leverages real-time sockets, geospatial visualization, and automated duplicate detection to streamline emergency response.
 
