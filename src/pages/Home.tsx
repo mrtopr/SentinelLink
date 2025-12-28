@@ -54,13 +54,13 @@ const Home: React.FC = () => {
 
                             <div className="flex items-center gap-8 pt-8 border-t border-gray-100">
                                 <div>
-                                    <p className="text-3xl font-black text-gray-900">{stats.total || '120+'}</p>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Reports Synced</p>
+                                    <p className="text-3xl font-black text-gray-900">{stats.total > 0 ? `${stats.total}+` : 'Live'}</p>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Reports Active</p>
                                 </div>
                                 <div className="w-px h-10 bg-gray-100" />
                                 <div>
-                                    <p className="text-3xl font-black text-gray-900">{stats.resolved || '94%'}</p>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Resolution Rate</p>
+                                    <p className="text-3xl font-black text-gray-900">{stats.resolved > 0 ? stats.resolved : '24/7'}</p>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{stats.resolved > 0 ? 'Resolved' : 'Monitoring'}</p>
                                 </div>
                             </div>
                         </div>
