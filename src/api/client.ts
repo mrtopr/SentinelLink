@@ -1,7 +1,18 @@
 import axios from 'axios';
 
+// Ensure API base URL includes /api
+const getBaseUrl = () => {
+    let url = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+    if (!url.endsWith('/api')) {
+        url = `${url}/api`;
+        // Handle potential double slash if url ended with /
+        url = url.replace('//api', '/api');
+    }
+    return url;
+};
+
 const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL,
+    baseURL: getBaseUrl(),
     headers: {
         'Content-Type': 'application/json',
     },
