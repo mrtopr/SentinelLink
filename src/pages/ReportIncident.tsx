@@ -1,10 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { INCIDENT_TYPES } from '../constants/incidents';
+import { INCIDENT_TYPES, HELPLINE_NUMBERS } from '../constants/incidents';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import Button from '../components/ui/Button';
-import { Camera, MapPin, Navigation, Send, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Camera, MapPin, Navigation, Send, AlertTriangle, CheckCircle2, Phone } from 'lucide-react';
 import { incidentApi } from '../api/incidents';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -135,7 +135,7 @@ const ReportIncident: React.FC = () => {
 
             await incidentApi.createIncident(data);
             setIsSuccess(true);
-            setTimeout(() => navigate('/incidents'), 2000);
+            // Don't auto-redirect - let users see the helpline info
         } catch (err: any) {
             console.error('Submission error:', err);
             setError(err.response?.data?.message || 'Failed to submit report. Please try again.');
@@ -144,20 +144,50 @@ const ReportIncident: React.FC = () => {
         }
     };
 
+    // Get helpline info for the submitted incident type
+    const helpline = HELPLINE_NUMBERS[formData.type] || HELPLINE_NUMBERS['OTHER'];
+
     if (isSuccess) {
         return (
             <div className="min-h-screen flex flex-col bg-gray-50">
                 <Navbar />
                 <main className="flex-grow flex items-center justify-center p-4">
-                    <div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-gray-100 max-w-lg w-full text-center space-y-6 animate-in zoom-in duration-500">
-                        <div className="w-24 h-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto">
-                            <CheckCircle2 className="w-12 h-12" />
+                    <div className="bg-white p-8 md:p-12 rounded-[2rem] shadow-2xl border border-gray-100 max-w-lg w-full text-center space-y-6 animate-in zoom-in duration-500">
+                        <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto">
+                            <CheckCircle2 className="w-10 h-10" />
                         </div>
                         <div className="space-y-2">
-                            <h1 className="text-3xl font-black text-gray-900">Report Submitted!</h1>
-                            <p className="text-gray-500 font-medium font-sans">Thank you for helping keep the community safe. Redirecting you to the live feed...</p>
+                            <h1 className="text-2xl md:text-3xl font-black text-gray-900">Report Submitted!</h1>
+                            <p className="text-gray-500 font-medium text-sm">Thank you for helping keep the community safe.</p>
                         </div>
-                        <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
+
+                        {/* Helpline Section */}
+                        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 space-y-4">
+                            <div className="flex items-center justify-center gap-2 text-blue-700">
+                                <Phone className="w-5 h-5" />
+                                <span className="font-bold text-sm uppercase tracking-wide">Emergency Helpline</span>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-gray-900 font-bold text-lg">{helpline.name}</p>
+                                <p className="text-gray-500 text-xs">{helpline.description}</p>
+                            </div>
+                            <a
+                                href={`tel:${helpline.number}`}
+                                className="inline-flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xl px-8 py-4 rounded-2xl transition-colors shadow-lg shadow-blue-600/25"
+                            >
+                                <Phone className="w-6 h-6" />
+                                {helpline.number}
+                            </a>
+                        </div>
+
+                        <Button
+                            variant="secondary"
+                            fullWidth
+                            onClick={() => navigate('/incidents')}
+                            className="mt-4"
+                        >
+                            View Live Incidents
+                        </Button>
                     </div>
                 </main>
                 <Footer />

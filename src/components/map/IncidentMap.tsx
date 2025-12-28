@@ -166,6 +166,11 @@ const IncidentMap: React.FC = () => {
                 return true;
             }
 
+            // Filter out RESOLVED incidents from map
+            if (incident.status === 'RESOLVED') {
+                return false;
+            }
+
             // Type Filter
             if (filters.type !== 'ALL' && incident.incidentType !== filters.type && incident.type !== filters.type) {
                 return false;

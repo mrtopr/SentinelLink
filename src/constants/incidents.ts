@@ -23,3 +23,18 @@ export const INCIDENT_TYPE_ICONS = INCIDENT_TYPES.reduce((acc, curr) => {
     acc[curr.value] = curr.icon;
     return acc;
 }, {} as Record<string, any>);
+
+// Emergency helpline numbers by incident type
+export const HELPLINE_NUMBERS: Record<string, { name: string; number: string; description: string }> = {
+    FIRE: { name: 'Fire Department', number: '101', description: 'For fire emergencies and rescue operations' },
+    MEDICAL: { name: 'Ambulance / Medical Emergency', number: '108', description: 'For medical emergencies and ambulance services' },
+    ACCIDENT: { name: 'Road Accident Emergency', number: '1073', description: 'National Highway Authority helpline for road accidents' },
+    FLOOD: { name: 'Water Emergency', number: '1916', description: 'Municipal water supply and flood control' },
+    PUBLIC_DISTURBANCE: { name: 'Police Control Room', number: '100', description: 'For law and order emergencies' },
+    INFRASTRUCTURE: { name: 'Municipal Corporation', number: '1800-111-555', description: 'For infrastructure issues and road hazards' },
+    POWER_OUTAGE: { name: 'Electricity Helpline', number: '1912', description: 'For power outages and electrical emergencies' },
+    NATURAL_DISASTER: { name: 'NDRF / Disaster Response', number: '1078', description: 'National Disaster Response Force helpline' },
+    SUSPICIOUS: { name: 'Police Control Room', number: '100', description: 'For reporting suspicious activities' },
+    OTHER: { name: 'Emergency Services', number: '112', description: 'Unified emergency helpline for all emergencies' },
+};
+

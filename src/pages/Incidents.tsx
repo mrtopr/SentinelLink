@@ -34,6 +34,7 @@ const Incidents: React.FC = () => {
     const [selectedType, setSelectedType] = useState<string>('All Types');
     const [selectedTimeRange, setSelectedTimeRange] = useState<string>('Anytime');
     const [showFilters, setShowFilters] = useState(false);
+    const [activeTab, setActiveTab] = useState<'active' | 'resolved'>('active');
 
     const [votedIncidents, setVotedIncidents] = useState<Set<string>>(() => {
         const saved = localStorage.getItem('voted_incidents');
@@ -137,10 +138,21 @@ const Incidents: React.FC = () => {
             filtered = filtered.filter(inc => new Date(inc.createdAt || inc.reportedAt) >= thirtyDaysAgo);
         }
 
+        // Status tab filter
+        if (activeTab === 'resolved') {
+            filtered = filtered.filter(inc => inc.status === 'RESOLVED');
+        } else {
+            filtered = filtered.filter(inc => inc.status !== 'RESOLVED');
+        }
+
         return filtered;
     };
 
     const filteredIncidentsList = filterIncidents();
+
+    // Counts for tabs
+    const activeCount = incidents.filter(inc => inc.status !== 'RESOLVED').length;
+    const resolvedCount = incidents.filter(inc => inc.status === 'RESOLVED').length;
 
     const incidentTypes = [
         { label: 'Vehicle Accident', icon: Car },
@@ -258,13 +270,28 @@ const Incidents: React.FC = () => {
 
                     {/* Right Content - Feed */}
                     <div className="flex-grow w-full">
-                        <div className="flex justify-between items-end mb-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
                             <div>
-                                <h2 className="text-2xl font-black text-gray-900">Live Incident Feed</h2>
-                                <p className="text-gray-500 text-sm mt-1">Real-time reports from the community</p>
+                                <h2 className="text-2xl font-black text-gray-900">
+                                    {activeTab === 'resolved' ? 'Resolved Incidents' : 'Live Incident Feed'}
+                                </h2>
+                                <p className="text-gray-500 text-sm mt-1">
+                                    {activeTab === 'resolved' ? 'Previously reported issues that have been addressed' : 'Real-time reports from the community'}
+                                </p>
                             </div>
-                            <div className="text-sm font-medium text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
-                                {filteredIncidentsList.length} Incidents Found
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setActiveTab('active')}
+                                    className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'active' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                >
+                                    Active ({activeCount})
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('resolved')}
+                                    className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'resolved' ? 'bg-green-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                >
+                                    Resolved ({resolvedCount})
+                                </button>
                             </div>
                         </div>
 
@@ -341,6 +368,18 @@ const Incidents: React.FC = () => {
                                                                     <span className="flex items-center gap-1 bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded border border-green-500/30">
                                                                         <CheckCircle2 className="w-3 h-3" />
                                                                         Verified
+                                                                    </span>
+                                                                )}
+                                                                {incident.status === 'IN_PROGRESS' && (
+                                                                    <span className="flex items-center gap-1 bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/30">
+                                                                        <Clock className="w-3 h-3" />
+                                                                        In Progress
+                                                                    </span>
+                                                                )}
+                                                                {incident.status === 'RESOLVED' && (
+                                                                    <span className="flex items-center gap-1 bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30">
+                                                                        <CheckCircle2 className="w-3 h-3" />
+                                                                        Resolved
                                                                     </span>
                                                                 )}
                                                             </div>
@@ -473,7 +512,7 @@ const Incidents: React.FC = () => {
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-auto pt-6 border-t border-gray-100">
-                                        <Link to="/map" className="w-full">
+                                        <Link to={`/map?incidentId=${selectedIncident.id}`} className="w-full">
                                             <Button variant="secondary" fullWidth className="bg-white border-2 border-gray-100 hover:border-gray-200">
                                                 <MapPin className="w-4 h-4 mr-2" />
                                                 View on Map
