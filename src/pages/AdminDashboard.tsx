@@ -10,12 +10,11 @@ import {
     LogOut,
     Settings,
     MessageSquare,
-    FileText,
-    MoreHorizontal
+    FileText
 } from 'lucide-react';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
-import { type Incident, type AdminNote } from '../data/mockData';
+import { type Incident } from '../data/mockData';
 import { incidentApi } from '../api/incidents';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../api/users';
@@ -34,7 +33,7 @@ const AdminDashboard: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [, setError] = useState<string | null>(null);
-   const [activeTab, setActiveTab] = useState<'dashboard' | 'incidents' | 'users' | 'settings'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'incidents' | 'users' | 'settings'>('dashboard');
 
     // Management Modal State
     const [managedIncident, setManagedIncident] = useState<Incident | null>(null);

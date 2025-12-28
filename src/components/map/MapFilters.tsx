@@ -1,5 +1,5 @@
 import React from 'react';
-import { Filter, Flame, Ambulance, Activity, Car, Megaphone, CloudLightning, ShieldAlert } from 'lucide-react';
+import { Filter, Flame, Ambulance, Activity, Car, Megaphone, CloudLightning } from 'lucide-react';
 
 export interface MapFilterState {
     radius: number; // in km
