@@ -14,10 +14,11 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
           leaflet: ['leaflet', 'react-leaflet'],
-          ui: ['lucide-react', 'clsx', 'tailwind-merge']
+          ui: ['lucide-react', 'clsx', 'tailwind-merge'],
+          utils: ['xlsx', 'socket.io-client', 'axios']
         }
       }
     },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1600,
   }
 })
