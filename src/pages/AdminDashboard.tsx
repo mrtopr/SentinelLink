@@ -30,8 +30,7 @@ const AdminDashboard: React.FC = () => {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'incidents' | 'users' | 'settings'>('dashboard');
+   const [activeTab, setActiveTab] = useState<'dashboard' | 'incidents' | 'users' | 'settings'>('dashboard');
 
     useEffect(() => {
         fetchIncidents();
