@@ -1,3 +1,13 @@
+export interface AdminNote {
+    id: string;
+    note: string;
+    createdAt: string;
+    user: {
+        name: string;
+        email: string;
+    };
+}
+
 export interface Incident {
     id: string;
     incidentType: string;
@@ -15,6 +25,7 @@ export interface Incident {
     image?: string; // UI uses image
     upvoteCount: number;
     upvotes?: number; // UI uses upvotes
+    adminNotes?: AdminNote[];
 }
 
 export const mockIncidents: Incident[] = [

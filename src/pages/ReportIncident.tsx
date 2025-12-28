@@ -5,6 +5,40 @@ import Footer from '../components/layout/Footer';
 import Button from '../components/ui/Button';
 import { Camera, MapPin, Navigation, Send, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { incidentApi } from '../api/incidents';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { renderToString } from 'react-dom/server';
+
+// Fix for default marker icon in Leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Helper component to handle map clicks and updates
+const LocationPickerMap: React.FC<{
+    position: { lat: number; lng: number } | null;
+    onLocationSelect: (lat: number, lng: number) => void;
+}> = ({ position, onLocationSelect }) => {
+    const map = useMap();
+
+    useMapEvents({
+        click(e) {
+            onLocationSelect(e.latlng.lat, e.latlng.lng);
+        },
+    });
+
+    React.useEffect(() => {
+        if (position) {
+            map.setView([position.lat, position.lng], map.getZoom());
+        }
+    }, [position, map]);
+
+    return position ? <Marker position={[position.lat, position.lng]} /> : null;
+};
 
 const ReportIncident: React.FC = () => {
     const navigate = useNavigate();
@@ -13,6 +47,8 @@ const ReportIncident: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showMap, setShowMap] = useState(false);
+    const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null);
 
     const [formData, setFormData] = useState({
         type: '',
@@ -30,17 +66,28 @@ const ReportIncident: React.FC = () => {
                 (position) => {
                     const { latitude, longitude } = position.coords;
                     setFormData(prev => ({ ...prev, location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` }));
+                    setMarkerPosition({ lat: latitude, lng: longitude });
+                    setShowMap(true); // Show map on detect
                     setIsLocating(false);
                 },
                 (err) => {
                     console.error('Location error:', err);
-                    setFormData(prev => ({ ...prev, location: '37.7749° N, 122.4194° W (Manual)' }));
+                    // Default to SF
+                    const defaultLat = 37.7749;
+                    const defaultLng = -122.4194;
+                    setFormData(prev => ({ ...prev, location: `${defaultLat}, ${defaultLng} (Manual)` }));
+                    setMarkerPosition({ lat: defaultLat, lng: defaultLng });
                     setIsLocating(false);
                 }
             );
         } else {
             setIsLocating(false);
         }
+    };
+
+    const handleLocationSelect = (lat: number, lng: number) => {
+        setMarkerPosition({ lat, lng });
+        setFormData(prev => ({ ...prev, location: `${lat.toFixed(4)}, ${lng.toFixed(4)}` }));
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,6 +127,7 @@ const ReportIncident: React.FC = () => {
             data.append('incidentType', incidentType);
             data.append('severity', formData.severity.toUpperCase());
             data.append('description', formData.description);
+            data.append('location', formData.location);
 
             // Parse location format: "latitude, longitude"
             const [lat, lng] = formData.location.split(',').map(s => s.trim());
@@ -212,13 +260,21 @@ const ReportIncident: React.FC = () => {
                                             className="group relative h-40 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 hover:border-primary/50 transition-all cursor-pointer overflow-hidden"
                                         >
                                             {previewUrl ? (
-                                                <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                                selectedFile?.type.startsWith('video/') ? (
+                                                    <video
+                                                        src={previewUrl}
+                                                        className="w-full h-full object-cover"
+                                                        controls
+                                                    />
+                                                ) : (
+                                                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                                )
                                             ) : (
                                                 <>
                                                     <div className="bg-white p-3 rounded-full shadow-sm group-hover:scale-110 transition-transform">
                                                         <Camera className="w-6 h-6 text-gray-400" />
                                                     </div>
-                                                    <p className="mt-3 text-sm font-medium text-gray-500">Click to upload photo</p>
+                                                    <p className="mt-3 text-sm font-medium text-gray-500">Click to upload photo or video</p>
                                                     <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-bold">Max 10MB • JPG, PNG, MP4</p>
                                                 </>
                                             )}
@@ -238,27 +294,56 @@ const ReportIncident: React.FC = () => {
                                 <label className="block text-sm font-bold text-gray-700 uppercase tracking-wider">
                                     Location
                                 </label>
-                                <div className="flex gap-2">
-                                    <div className="relative flex-grow">
-                                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                        <input
-                                            type="text"
-                                            placeholder="Enter location or use auto-detect"
-                                            className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                                            value={formData.location}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                                            required
-                                        />
+                                <div className="space-y-3">
+                                    <div className="flex gap-2">
+                                        <div className="relative flex-grow">
+                                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                            <input
+                                                type="text"
+                                                placeholder="Enter location or drop a pin"
+                                                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                                                value={formData.location}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                                                required
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            className="shrink-0 px-4 h-[50px] bg-white border border-gray-200"
+                                            onClick={() => setShowMap(!showMap)}
+                                        >
+                                            {showMap ? 'Hide Map' : 'Pick on Map'}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            className="shrink-0 px-4 h-[50px] bg-white border border-gray-200"
+                                            onClick={handleDetectLocation}
+                                            isLoading={isLocating}
+                                        >
+                                            {!isLocating && <Navigation className="w-5 h-5" />}
+                                        </Button>
                                     </div>
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        className="shrink-0 px-4 h-[50px] bg-white border border-gray-200"
-                                        onClick={handleDetectLocation}
-                                        isLoading={isLocating}
-                                    >
-                                        {!isLocating && <Navigation className="w-5 h-5" />}
-                                    </Button>
+
+                                    {showMap && (
+                                        <div className="h-64 w-full rounded-2xl overflow-hidden border-2 border-gray-100 shadow-inner relative z-0">
+                                            <MapContainer
+                                                center={markerPosition ? [markerPosition.lat, markerPosition.lng] : [28.6139, 77.2090]} // Default to New Delhi or last known
+                                                zoom={13}
+                                                style={{ height: '100%', width: '100%' }}
+                                            >
+                                                <TileLayer
+                                                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                                />
+                                                <LocationPickerMap position={markerPosition} onLocationSelect={handleLocationSelect} />
+                                            </MapContainer>
+                                            <div className="absolute bottom-2 left-2 bg-white/80 backdrop-blur px-2 py-1 rounded-md text-[10px] z-[1000] font-bold text-gray-500 pointer-events-none">
+                                                Click map to set location
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

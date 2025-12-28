@@ -8,11 +8,14 @@ import {
     AlertTriangle,
     Loader2,
     LogOut,
-    Settings
+    Settings,
+    MessageSquare,
+    FileText,
+    MoreHorizontal
 } from 'lucide-react';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
-import { type Incident } from '../data/mockData';
+import { type Incident, type AdminNote } from '../data/mockData';
 import { incidentApi } from '../api/incidents';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../api/users';
@@ -32,6 +35,11 @@ const AdminDashboard: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'dashboard' | 'incidents' | 'users' | 'settings'>('dashboard');
+
+    // Management Modal State
+    const [managedIncident, setManagedIncident] = useState<Incident | null>(null);
+    const [newNote, setNewNote] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
 
     useEffect(() => {
         fetchIncidents();
@@ -81,6 +89,86 @@ const AdminDashboard: React.FC = () => {
         } catch (err) {
             console.error('Error deleting user:', err);
             alert('Failed to delete user.');
+        }
+    };
+
+    const handleOpenManage = async (id: string) => {
+        try {
+            setIsLoading(true);
+            const data = await incidentApi.getIncidentById(id);
+            setManagedIncident(data.data);
+            setNewNote('');
+        } catch (err) {
+            console.error('Error fetching incident details:', err);
+            alert('Failed to load incident details');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleAddNote = async () => {
+        if (!managedIncident || !newNote.trim()) return;
+        setIsUpdating(true);
+        try {
+            const response = await incidentApi.addNote(managedIncident.id, newNote);
+            // Use returned data to update state immediately
+            if (response.success && response.data) {
+                setManagedIncident(response.data);
+                setNewNote('');
+            } else {
+                // Fallback refetch if response structure isn't as expected
+                const data = await incidentApi.getIncidentById(managedIncident.id);
+                setManagedIncident(data.data);
+                setNewNote('');
+            }
+        } catch (err) {
+            console.error('Error adding note:', err);
+            alert('Failed to add note');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleSeverityUpdate = async (newSeverity: string) => {
+        if (!managedIncident) return;
+        setIsUpdating(true);
+        try {
+            await incidentApi.updateSeverity(managedIncident.id, newSeverity);
+            setManagedIncident(prev => prev ? { ...prev, severity: newSeverity as any } : null);
+            // Also update the main list
+            setIncidents(prev => prev.map(inc => inc.id === managedIncident.id ? { ...inc, severity: newSeverity as any } : inc));
+        } catch (err) {
+            console.error('Error updating severity:', err);
+            alert('Failed to update severity');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleManageStatusUpdate = async (newStatus: string) => {
+        if (!managedIncident) return;
+        setIsUpdating(true);
+        try {
+            await incidentApi.updateIncidentStatus(managedIncident.id, newStatus);
+            setManagedIncident(prev => prev ? { ...prev, status: newStatus as any } : null);
+            // Also update the main list
+            setIncidents(prev => prev.map(inc => inc.id === managedIncident.id ? { ...inc, status: newStatus as any } : inc));
+        } catch (err) {
+            console.error('Error updating status:', err);
+            alert('Failed to update status');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleDeleteIncident = async (id: string) => {
+        if (!window.confirm('Are you sure you want to delete this flagged incident? This action cannot be undone.')) return;
+        try {
+            await incidentApi.deleteIncident(id);
+            setIncidents((prev: Incident[]) => prev.filter((inc: Incident) => inc.id !== id));
+        } catch (err) {
+            console.error('Error deleting incident:', err);
+            alert('Failed to delete incident.');
         }
     };
 
@@ -308,23 +396,171 @@ const AdminDashboard: React.FC = () => {
                                             <td className="px-8 py-6 text-sm">{incident.location}</td>
                                             <td className="px-8 py-6"><Badge label={incident.severity} type="severity" value={incident.severity} /></td>
                                             <td className="px-8 py-6"><Badge label={incident.status} type="status" value={incident.status} /></td>
-                                            <td className="px-8 py-6">
-                                                <select
-                                                    className="text-xs bg-gray-50 p-1 rounded cursor-pointer"
-                                                    value={incident.status}
-                                                    onChange={(e) => handleStatusUpdate(incident.id, e.target.value)}
+                                            <td className="px-8 py-6 flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleOpenManage(incident.id)}
+                                                    className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors text-xs font-bold flex items-center gap-1"
                                                 >
-                                                    <option value="REPORTED">Reported</option>
-                                                    <option value="VERIFIED">Verified</option>
-                                                    <option value="IN_PROGRESS">In Progress</option>
-                                                    <option value="RESOLVED">Resolved</option>
-                                                    <option value="FLAGGED">Flagged</option>
-                                                </select>
+                                                    <Settings className="w-3 h-3" /> Manage
+                                                </button>
+                                                {incident.status === 'FLAGGED' && (
+                                                    <button
+                                                        onClick={() => handleDeleteIncident(incident.id)}
+                                                        className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded-lg transition-colors"
+                                                        title="Delete Incident"
+                                                    >
+                                                        <LogOut className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                )}
+
+                {/* Management Modal */}
+                {managedIncident && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+                        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                                <div className="flex items-center gap-3">
+                                    <h2 className="text-xl font-black text-gray-900">Manage Incident</h2>
+                                    <span className="text-sm font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">#{managedIncident.id.slice(0, 8)}</span>
+                                </div>
+                                <button onClick={() => setManagedIncident(null)} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+                                    <LogOut className="w-5 h-5 rotate-180" />
+                                </button>
+                            </div>
+
+                            <div className="flex-grow overflow-y-auto p-6 md:p-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                    {/* Left Status Column */}
+                                    <div className="space-y-6">
+                                        {/* Media Preview */}
+                                        <div className="bg-gray-100 rounded-2xl overflow-hidden h-48 relative border border-gray-200">
+                                            {(managedIncident.mediaUrl || managedIncident.image) ? (
+                                                (managedIncident.mediaUrl?.match(/\.(mp4|webm|ogg|mov)$/i)) ? (
+                                                    <video
+                                                        src={managedIncident.mediaUrl}
+                                                        className="w-full h-full object-cover"
+                                                        controls
+                                                    />
+                                                ) : (
+                                                    <img
+                                                        src={managedIncident.mediaUrl || managedIncident.image}
+                                                        alt={managedIncident.incidentType}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                )
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-gray-400 flex-col gap-2">
+                                                    <AlertCircle className="w-8 h-8 opacity-50" />
+                                                    <span className="text-xs font-bold uppercase tracking-wider">No Media</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Priority (Severity)</label>
+                                            <div className="flex gap-2">
+                                                {['LOW', 'MEDIUM', 'HIGH'].map((level) => (
+                                                    <button
+                                                        key={level}
+                                                        onClick={() => handleSeverityUpdate(level)}
+                                                        className={`flex-1 py-3 rounded-xl font-bold text-sm border-2 transition-all ${managedIncident.severity === level
+                                                            ? (level === 'HIGH' ? 'border-red-500 bg-red-50 text-red-700' : level === 'MEDIUM' ? 'border-yellow-500 bg-yellow-50 text-yellow-700' : 'border-green-500 bg-green-50 text-green-700')
+                                                            : 'border-gray-100 bg-white text-gray-500 hover:border-gray-200'
+                                                            }`}
+                                                    >
+                                                        {level}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Status</label>
+                                            <select
+                                                className="w-full text-sm font-bold bg-gray-50 p-4 rounded-xl border border-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                                value={managedIncident.status}
+                                                onChange={(e) => handleManageStatusUpdate(e.target.value)}
+                                            >
+                                                <option value="REPORTED">Reported</option>
+                                                <option value="VERIFIED">Verified</option>
+                                                <option value="IN_PROGRESS">In Progress</option>
+                                                <option value="RESOLVED">Resolved</option>
+                                                <option value="FLAGGED">Flagged</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="p-4 bg-blue-50 rounded-2xl">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <h4 className="font-bold text-blue-900">{managedIncident.incidentType}</h4>
+                                                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">
+                                                        {new Date(managedIncident.createdAt).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <p className="text-blue-700/80 text-sm">{managedIncident.description}</p>
+                                            </div>
+
+                                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                                <h4 className="font-bold text-gray-900 text-xs uppercase tracking-widest mb-1">Location Details</h4>
+                                                <p className="text-gray-600 text-sm font-medium">{managedIncident.location}</p>
+                                                {(managedIncident.latitude && managedIncident.longitude) && (
+                                                    <div className="mt-2 flex items-center gap-2 text-xs text-gray-400 font-mono bg-white px-2 py-1 rounded border border-gray-200 w-fit">
+                                                        <span className="font-bold text-primary">LAT:</span> {managedIncident.latitude.toFixed(6)}
+                                                        <span className="w-px h-3 bg-gray-300 mx-1" />
+                                                        <span className="font-bold text-primary">LNG:</span> {managedIncident.longitude.toFixed(6)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Right Notes Column */}
+                                    <div className="flex flex-col h-[400px]">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <FileText className="w-4 h-4 text-gray-400" />
+                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Internal Notes</label>
+                                        </div>
+
+                                        <div className="flex-grow bg-gray-50 rounded-2xl p-4 overflow-y-auto mb-4 border border-gray-100 space-y-4">
+                                            {managedIncident.adminNotes?.length ? (
+                                                managedIncident.adminNotes.map((note) => (
+                                                    <div key={note.id} className="bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                                                        <p className="text-gray-700 text-sm mb-2">{note.note}</p>
+                                                        <div className="flex justify-between items-center text-[10px] text-gray-400">
+                                                            <span className="font-bold">{note.user.name}</span>
+                                                            <span>{new Date(note.createdAt).toLocaleString()}</span>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="h-full flex flex-col items-center justify-center text-gray-300">
+                                                    <MessageSquare className="w-8 h-8 mb-2 opacity-50" />
+                                                    <p className="text-sm font-medium">No internal notes yet</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                placeholder="Add an internal note..."
+                                                className="flex-grow p-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                                                value={newNote}
+                                                onChange={(e) => setNewNote(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
+                                            />
+                                            <Button disabled={isUpdating} onClick={handleAddNote}>Send</Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}

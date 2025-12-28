@@ -25,4 +25,16 @@ export const incidentApi = {
         const response = await apiClient.post(`/incidents/${id}/upvote`);
         return response.data;
     },
+    deleteIncident: async (id: string) => {
+        const response = await apiClient.delete(`/incidents/${id}`);
+        return response.data;
+    },
+    addNote: async (id: string, note: string) => {
+        const response = await apiClient.post(`/incidents/${id}/notes`, { note });
+        return response.data;
+    },
+    updateSeverity: async (id: string, severity: string) => {
+        const response = await apiClient.patch(`/incidents/${id}/severity`, { severity });
+        return response.data;
+    },
 };

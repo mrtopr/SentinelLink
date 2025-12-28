@@ -1,5 +1,5 @@
 import React from 'react';
-import { Filter, Flame, Ambulance, Activity } from 'lucide-react';
+import { Filter, Flame, Ambulance, Activity, Car, Megaphone, CloudLightning, ShieldAlert } from 'lucide-react';
 
 export interface MapFilterState {
     radius: number; // in km
@@ -94,7 +94,9 @@ const MapFilters: React.FC<MapFiltersProps> = ({ filters, onChange }) => {
                             {type === 'ALL' && <Activity className="w-4 h-4" />}
                             {type === 'Fire' && <Flame className="w-4 h-4" />}
                             {type === 'Medical' && <Ambulance className="w-4 h-4" />}
-                            {type !== 'ALL' && type !== 'Fire' && type !== 'Medical' && <div className="w-4 h-4 bg-gray-200 rounded-full" />}
+                            {type === 'Accident' && <Car className="w-4 h-4" />}
+                            {type === 'Public Disturbance' && <Megaphone className="w-4 h-4" />}
+                            {type === 'Natural Disaster' && <CloudLightning className="w-4 h-4" />}
                             {type === 'ALL' ? 'All Incidents' : type}
                         </button>
                     ))}
