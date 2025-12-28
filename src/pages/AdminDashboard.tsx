@@ -33,8 +33,8 @@ const AdminDashboard: React.FC = () => {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'incidents' | 'users' | 'settings'>('dashboard');
+    const [, setError] = useState<string | null>(null);
+   const [activeTab, setActiveTab] = useState<'dashboard' | 'incidents' | 'users' | 'settings'>('dashboard');
 
     // Management Modal State
     const [managedIncident, setManagedIncident] = useState<Incident | null>(null);
